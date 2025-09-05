@@ -166,7 +166,6 @@
   </style>
 </head>
 <body>
-
   <!-- Layar Login -->
   <div id="loginScreen" class="login-form">
     <h2><i class="fas fa-user-shield"></i> Login Admin</h2>
@@ -216,7 +215,6 @@
           <option value="Pringsewu">Pringsewu</option>
         </select>
       </div>
-      <!-- 🔥 KOLOM NOMOR TELEPON -->
       <div class="form-group">
         <label>Nomor Telepon</label>
         <input type="text" id="telepon" placeholder="Contoh: 081234567890">
@@ -307,6 +305,7 @@
       <table id="karyawanTable">
         <thead>
           <tr>
+            <th>QR</th>
             <th>Foto</th>
             <th>Nama</th>
             <th>NIK</th>
@@ -317,7 +316,6 @@
             <th>Kontrak</th>
             <th>Jabatan</th>
             <th>Status</th>
-            <th>QR</th>
             <th>Dokumen</th>
             <th>Aksi</th>
           </tr>
@@ -360,7 +358,6 @@
     function login() {
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
-
       if (username === ADMIN_USER && password === ADMIN_PASS) {
         localStorage.setItem('adminLoggedIn', 'true');
         tampilkanDashboard();
@@ -415,35 +412,89 @@
           height: 80
         });
 
+        // Foto
+        const fotoCell = row.insertCell();
+        const img = document.createElement('img');
+        img.src = item.foto || 'https://via.placeholder.com/40';
+        img.width = 40;
+        img.height = 40;
+        img.style.borderRadius = '50%';
+        img.style.objectFit = 'cover';
+        fotoCell.appendChild(img);
+
+        // Nama
+        const namaCell = row.insertCell();
+        namaCell.textContent = item.nama;
+
+        // NIK
+        const nikCell = row.insertCell();
+        nikCell.textContent = item.nik;
+
+        // Alamat
+        const alamatCell = row.insertCell();
+        alamatCell.textContent = item.alamat || '-';
+
+        // Telepon
+        const teleponCell = row.insertCell();
+        teleponCell.textContent = item.telepon || '-';
+
+        // Mulai Kerja
+        const mulaiCell = row.insertCell();
+        mulaiCell.textContent = formatTanggal(item.mulai);
+
+        // Pendidikan
+        const pendidikanCell = row.insertCell();
+        pendidikanCell.textContent = item.pendidikan || '-';
+
+        // Kontrak
+        const kontrakCell = row.insertCell();
+        kontrakCell.textContent = `${item.kontrak} Tahun`;
+
+        // Jabatan
+        const jabatanCell = row.insertCell();
+        jabatanCell.textContent = item.jabatan;
+
+        // Status
+        const statusCell = row.insertCell();
+        const statusSpan = document.createElement('span');
+        statusSpan.style.padding = '4px 8px';
+        statusSpan.style.borderRadius = '4px';
+        statusSpan.style.fontSize = '0.8rem';
+        statusSpan.style.color = 'white';
+        statusSpan.style.backgroundColor =
+          item.status === 'Aktif' ? '#4CAF50' :
+          item.status === 'Resign' ? '#f44336' :
+          item.status === 'Non Aktif' ? '#FF9800' : '#999';
+        statusSpan.textContent = item.status;
+        statusCell.appendChild(statusSpan);
+
         // Dokumen
         const dokumenCell = row.insertCell();
         if (item.dokumen) {
-          dokumenCell.innerHTML = `<a href="${item.dokumen}" download="kontrak-${item.nik}.pdf" style="color:#2196F3;">📥 Unduh</a>`;
+          const link = document.createElement('a');
+          link.href = item.dokumen;
+          link.download = `kontrak-${item.nik}.pdf`;
+          link.innerHTML = '📥 Unduh';
+          link.style.color = '#2196F3';
+          dokumenCell.appendChild(link);
         } else {
           dokumenCell.textContent = '-';
         }
 
-        // Sisanya
-        row.innerHTML = row.innerHTML.replace('</td><td>', `
-          <td><img src="${item.foto || 'https://via.placeholder.com/40'}" width="40" height="40" style="border-radius:50%; object-fit:cover;"></td>
-          <td>${item.nama}</td>
-          <td>${item.nik}</td>
-          <td>${item.alamat}</td>
-          <td>${item.telepon || '-'}</td>
-          <td>${formatTanggal(item.mulai)}</td>
-          <td>${item.pendidikan || '-'}</td>
-          <td>${item.kontrak} Tahun</td>
-          <td>${item.jabatan}</td>
-          <td><span style="padding:4px 8px; border-radius:4px; background:${
-            item.status === 'Aktif' ? '#4CAF50' :
-            item.status === 'Resign' ? '#f44336' :
-            item.status === 'Non Aktif' ? '#FF9800' : '#999'
-          }; color:white; font-size:0.8rem;">${item.status}</span></td>
-        `) + `<td>${dokumenCell.outerHTML}</td>
-        <td class="action-buttons">
-          <button onclick="editKaryawan(${index})"><i class="fas fa-edit"></i> Edit</button>
-          <button onclick="hapusKaryawan(${index})"><i class="fas fa-trash"></i> Hapus</button>
-        </td>`;
+        // Aksi: Edit & Hapus
+        const actionCell = row.insertCell();
+        actionCell.className = 'action-buttons';
+
+        const editBtn = document.createElement('button');
+        editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+        editBtn.onclick = () => editKaryawan(index);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Hapus';
+        deleteBtn.onclick = () => hapusKaryawan(index);
+
+        actionCell.appendChild(editBtn);
+        actionCell.appendChild(deleteBtn);
       });
 
       renderChart();
@@ -470,6 +521,12 @@
     document.getElementById('dokumenKontrak').onchange = function(e) {
       const file = e.target.files[0];
       if (file) {
+        const allowed = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        if (!allowed.includes(file.type)) {
+          alert("Hanya file PDF, DOC, atau DOCX yang diperbolehkan.");
+          this.value = '';
+          return;
+        }
         const reader = new FileReader();
         reader.onload = function(e) {
           document.getElementById('dokumen').value = e.target.result;
@@ -484,7 +541,6 @@
       // Reset error
       document.getElementById('errorNama').textContent = '';
       document.getElementById('errorNik').textContent = '';
-
       const nama = getVal('nama');
       const nik = getVal('nik');
       const alamat = getVal('alamat');
@@ -497,7 +553,6 @@
       const editId = document.getElementById('editId').value;
       const fotoInput = document.getElementById('foto');
       const dokumenInput = document.getElementById('dokumenKontrak');
-
       let fotoURL = '';
       let dokumenURL = document.getElementById('dokumen').value;
 
@@ -555,7 +610,6 @@
           nama, nik, alamat, telepon, mulai, pendidikan, kontrak, 
           jabatan, status, foto: fotoURL, dokumen: dokumenURL 
         };
-
         if (editId !== "") {
           data[editId] = item;
           showToast("Data diperbarui.");
@@ -579,7 +633,6 @@
         alert("Data tidak ditemukan.");
         return;
       }
-
       document.getElementById('editId').value = index;
       setVal('nama', item.nama);
       setVal('nik', item.nik);
@@ -590,14 +643,11 @@
       setVal('kontrak', item.kontrak);
       setVal('jabatan', item.jabatan);
       setVal('status', item.status);
-
       // Foto
       document.getElementById('photoPreview').style.backgroundImage = item.foto ? `url(${item.foto})` : '';
-
       // Dokumen
       document.getElementById('dokumen').value = item.dokumen || '';
       document.getElementById('fileName').innerHTML = item.dokumen ? '<small>File kontrak sudah ada</small>' : '';
-
       document.getElementById('formTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Karyawan';
     }
 
@@ -624,8 +674,8 @@
       const filtered = allData.filter(item =>
         item.nama.toLowerCase().includes(query) ||
         item.nik.includes(query) ||
-        item.alamat.toLowerCase().includes(query) ||
-        item.telepon.includes(query) ||
+        item.alamat?.toLowerCase().includes(query) ||
+        item.telepon?.includes(query) ||
         item.jabatan.toLowerCase().includes(query)
       );
       renderFiltered(filtered);
@@ -637,43 +687,102 @@
       data.forEach((item, index) => {
         const row = tbody.insertRow();
 
+        // QR
+        const qrCell = row.insertCell();
         const qrDiv = document.createElement('div');
         qrDiv.className = 'qrcode-container';
         qrDiv.style.width = '80px';
         qrDiv.style.height = '80px';
+        qrCell.appendChild(qrDiv);
         new QRCode(qrDiv, {
           text: JSON.stringify({ nama: item.nama, nik: item.nik, jabatan: item.jabatan }),
           width: 80,
           height: 80
         });
-        const qrCell = row.insertCell();
-        qrCell.appendChild(qrDiv);
 
+        // Foto
+        const fotoCell = row.insertCell();
+        const img = document.createElement('img');
+        img.src = item.foto || 'https://via.placeholder.com/40';
+        img.width = 40;
+        img.height = 40;
+        img.style.borderRadius = '50%';
+        img.style.objectFit = 'cover';
+        fotoCell.appendChild(img);
+
+        // Nama
+        const namaCell = row.insertCell();
+        namaCell.textContent = item.nama;
+
+        // NIK
+        const nikCell = row.insertCell();
+        nikCell.textContent = item.nik;
+
+        // Alamat
+        const alamatCell = row.insertCell();
+        alamatCell.textContent = item.alamat || '-';
+
+        // Telepon
+        const teleponCell = row.insertCell();
+        teleponCell.textContent = item.telepon || '-';
+
+        // Mulai
+        const mulaiCell = row.insertCell();
+        mulaiCell.textContent = formatTanggal(item.mulai);
+
+        // Pendidikan
+        const pendidikanCell = row.insertCell();
+        pendidikanCell.textContent = item.pendidikan || '-';
+
+        // Kontrak
+        const kontrakCell = row.insertCell();
+        kontrakCell.textContent = `${item.kontrak} Tahun`;
+
+        // Jabatan
+        const jabatanCell = row.insertCell();
+        jabatanCell.textContent = item.jabatan;
+
+        // Status
+        const statusCell = row.insertCell();
+        const statusSpan = document.createElement('span');
+        statusSpan.style.padding = '4px 8px';
+        statusSpan.style.borderRadius = '4px';
+        statusSpan.style.fontSize = '0.8rem';
+        statusSpan.style.color = 'white';
+        statusSpan.style.backgroundColor =
+          item.status === 'Aktif' ? '#4CAF50' :
+          item.status === 'Resign' ? '#f44336' :
+          item.status === 'Non Aktif' ? '#FF9800' : '#999';
+        statusSpan.textContent = item.status;
+        statusCell.appendChild(statusSpan);
+
+        // Dokumen
         const dokumenCell = row.insertCell();
         if (item.dokumen) {
-          dokumenCell.innerHTML = `<a href="${item.dokumen}" download style="color:#2196F3;">📥</a>`;
+          const link = document.createElement('a');
+          link.href = item.dokumen;
+          link.download = `kontrak-${item.nik}.pdf`;
+          link.innerHTML = '📥 Unduh';
+          link.style.color = '#2196F3';
+          dokumenCell.appendChild(link);
         } else {
           dokumenCell.textContent = '-';
         }
 
-        row.innerHTML = row.innerHTML.replace('</td><td>', `
-          <td><img src="${item.foto || 'https://via.placeholder.com/40'}" width="40" height="40" style="border-radius:50%; object-fit:cover;"></td>
-          <td>${item.nama}</td>
-          <td>${item.nik}</td>
-          <td>${item.alamat}</td>
-          <td>${item.telepon || '-'}</td>
-          <td>${formatTanggal(item.mulai)}</td>
-          <td>${item.pendidikan || '-'}</td>
-          <td>${item.kontrak} Tahun</td>
-          <td>${item.jabatan}</td>
-          <td><span style="padding:4px 8px; border-radius:4px; background:${
-            item.status === 'Aktif' ? '#4CAF50' : '#f44336'
-          }; color:white; font-size:0.8rem;">${item.status}</span></td>
-        `) + `<td>${dokumenCell.outerHTML}</td>
-        <td class="action-buttons">
-          <button onclick="editKaryawan(${index})"><i class="fas fa-edit"></i> Edit</button>
-          <button onclick="hapusKaryawan(${index})"><i class="fas fa-trash"></i> Hapus</button>
-        </td>`;
+        // Aksi
+        const actionCell = row.insertCell();
+        actionCell.className = 'action-buttons';
+
+        const editBtn = document.createElement('button');
+        editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+        editBtn.onclick = () => editKaryawan(index);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Hapus';
+        deleteBtn.onclick = () => hapusKaryawan(index);
+
+        actionCell.appendChild(editBtn);
+        actionCell.appendChild(deleteBtn);
       });
     }
 
@@ -824,7 +933,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Data-Karyawan-${new Date().toLocaleDateString('id-ID')}.csv`;
+      a.download = `Data-Karyawan-${new Date().toLocaleDateString('id-ID').replace(/\//g, '-')}.csv`;
       a.click();
       URL.revokeObjectURL(url);
       showToast("Data berhasil diekspor ke CSV");
@@ -837,7 +946,6 @@
         alert("Belum ada data untuk di-backup.");
         return;
       }
-
       try {
         const res = await fetch(GAS_URL, {
           method: 'POST',
@@ -845,9 +953,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
-
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
-
         const result = await res.json();
         if (result.result === 'success') {
           showToast(`✅ Backup berhasil! File: ${result.file}`);
