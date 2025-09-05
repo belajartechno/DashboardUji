@@ -921,25 +921,35 @@
 
     // Backup ke Google Drive
     async function backupKeGoogleDrive() {
-      const data = JSON.parse(localStorage.getItem('karyawanData')) || [];
-      if (data.length === 0) {
-        alert("Belum ada data untuk di-backup.");
-        return;
-      }
-      try {
-        await fetch(GAS_URL, {
-          method: 'POST',
-          mode: 'no-cors', // 🔴 Wajib untuk GAS
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        showToast("✅ Backup dikirim! Cek folder Google Drive Anda.");
-        console.log("Backup dikirim ke Google Apps Script. Cek folder Drive.");
-      } catch (err) {
-        console.error("Gagal backup:", err);
-        alert("Gagal kirim backup. Pastikan:\n1. GAS_URL benar\n2. Folder ID benar\n3. Folder diizinkan untuk ditulis oleh script\n4. Deploy GAS sebagai 'Anyone'");
-      }
+  const data = JSON.parse(localStorage.getItem('karyawanData')) || [];
+  if (data.length === 0) {
+    alert("Belum ada data untuk di-backup.");
+    return;
+  }
+
+  try {
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'cors', // ✅ Ganti dari 'no-cors' ke 'cors'
+      headers: { 
+        'Content-Type': 'application/json' 
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+    
+    const result = await res.json();
+    if (result.result === 'success') {
+      alert(`✅ Backup berhasil! File: ${result.file}`);
+    } else {
+      alert(`❌ Gagal: ${result.error}`);
     }
+  } catch (err) {
+    console.error("Error:", err);
+    alert("Gagal backup. Detail: " + err.message);
+  }
+}
   </script>
 </body>
 </html>
