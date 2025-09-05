@@ -7,7 +7,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- ✅ GUNAKAN QRCode.js YANG BENAR -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode.js/lib/qrcode.min.js"></script>
   <style>
     :root {
@@ -338,7 +337,7 @@
   <input type="hidden" id="dokumen">
 
   <script>
-    // ✅ URL WEB APP GOOGLE APPS SCRIPT SUDAH DIISI
+    // ✅ URL Web App GAS (Harus diganti dengan milik Anda)
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxBddB4Qb9MUKY_qF3M10DXK0o96Won_-0tD8FvbZGt_xZ4b1PyfzVPZlaoQU49BQYenQ/exec';
 
     // Username & password admin
@@ -882,7 +881,6 @@
         </html>
       `);
       printWindow.document.close();
-      // ✅ Gunakan setTimeout untuk print
       printWindow.onload = () => {
         printWindow.print();
       };
@@ -931,7 +929,7 @@
       try {
         await fetch(GAS_URL, {
           method: 'POST',
-          mode: 'no-cors', // 🔴 Wajib untuk GAS
+          mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
@@ -939,7 +937,7 @@
         console.log("Backup dikirim ke Google Apps Script. Cek folder Drive.");
       } catch (err) {
         console.error("Gagal backup:", err);
-        alert("Gagal kirim backup. Cek: 1. GAS_URL, 2. Deploy GAS sebagai 'Anyone', 3. FOLDER_ID di GAS.");
+        alert("Gagal kirim backup. Pastikan:\n1. GAS_URL benar\n2. Folder ID benar\n3. Folder diizinkan untuk ditulis oleh script\n4. Deploy GAS sebagai 'Anyone'");
       }
     }
   </script>
