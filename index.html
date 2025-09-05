@@ -7,6 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- ✅ QRCode.js yang benar -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     :root {
@@ -337,7 +338,7 @@
   <input type="hidden" id="dokumen">
 
   <script>
-    // ✅ URL Web App GAS (Harus diganti dengan milik Anda)
+    // ✅ GANTI INI DENGAN URL WEB APP ANDA DARI GOOGLE APPS SCRIPT
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxBddB4Qb9MUKY_qF3M10DXK0o96Won_-0tD8FvbZGt_xZ4b1PyfzVPZlaoQU49BQYenQ/exec';
 
     // Username & password admin
@@ -929,10 +930,11 @@
 
   try {
     const res = await fetch(GAS_URL, {
-      method: 'POST',
-      mode: 'no-cors', // 🔴 WAJIB UNTUK GAS
-      body: JSON.stringify(data)
-    });
+  method: 'POST',
+  mode: 'no-cors',
+  body: JSON.stringify(data) // ✅ Tidak ada headers
+});
+
     showToast("✅ Backup dikirim! Cek folder Google Drive Anda.");
     console.log("Backup dikirim ke GAS. Cek folder Drive.");
   } catch (err) {
