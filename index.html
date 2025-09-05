@@ -929,7 +929,7 @@
       try {
         await fetch(GAS_URL, {
           method: 'POST',
-          mode: 'no-cors',
+          mode: 'no-cors', // 🔴 Wajib untuk GAS
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
