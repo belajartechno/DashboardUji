@@ -7,7 +7,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode.js/1.0.0/qrcode.min.js"></script>
+  <!-- ✅ GUNAKAN QRCode.js YANG BENAR -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode.js/lib/qrcode.min.js"></script>
   <style>
     :root {
       --primary: #4CAF50;
@@ -337,7 +338,7 @@
   <input type="hidden" id="dokumen">
 
   <script>
-    // 🔥 GANTI INI DENGAN URL WEB APP ANDA DARI GOOGLE APPS SCRIPT
+    // ✅ URL WEB APP GOOGLE APPS SCRIPT SUDAH DIISI
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxBddB4Qb9MUKY_qF3M10DXK0o96Won_-0tD8FvbZGt_xZ4b1PyfzVPZlaoQU49BQYenQ/exec';
 
     // Username & password admin
@@ -538,7 +539,6 @@
 
     // Simpan/Edit Karyawan
     function simpanKaryawan() {
-      // Reset error
       document.getElementById('errorNama').textContent = '';
       document.getElementById('errorNik').textContent = '';
       const nama = getVal('nama');
@@ -556,7 +556,6 @@
       let fotoURL = '';
       let dokumenURL = document.getElementById('dokumen').value;
 
-      // Validasi
       if (!nama) {
         document.getElementById('errorNama').textContent = 'Nama wajib diisi';
         return;
@@ -570,7 +569,6 @@
         return;
       }
 
-      // Cek NIK duplikat (kecuali saat edit)
       const data = JSON.parse(localStorage.getItem('karyawanData')) || [];
       const exists = data.find((item, i) => item.nik === nik && i != editId);
       if (exists) {
@@ -578,7 +576,6 @@
         return;
       }
 
-      // Upload foto
       if (fotoInput.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -592,7 +589,6 @@
       }
 
       function lanjutSimpan() {
-        // Upload dokumen
         if (dokumenInput.files[0] && !dokumenURL) {
           const reader = new FileReader();
           reader.onload = function(e) {
@@ -643,9 +639,7 @@
       setVal('kontrak', item.kontrak);
       setVal('jabatan', item.jabatan);
       setVal('status', item.status);
-      // Foto
       document.getElementById('photoPreview').style.backgroundImage = item.foto ? `url(${item.foto})` : '';
-      // Dokumen
       document.getElementById('dokumen').value = item.dokumen || '';
       document.getElementById('fileName').innerHTML = item.dokumen ? '<small>File kontrak sudah ada</small>' : '';
       document.getElementById('formTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Karyawan';
@@ -687,7 +681,6 @@
       data.forEach((item, index) => {
         const row = tbody.insertRow();
 
-        // QR
         const qrCell = row.insertCell();
         const qrDiv = document.createElement('div');
         qrDiv.className = 'qrcode-container';
@@ -700,7 +693,6 @@
           height: 80
         });
 
-        // Foto
         const fotoCell = row.insertCell();
         const img = document.createElement('img');
         img.src = item.foto || 'https://via.placeholder.com/40';
@@ -710,39 +702,30 @@
         img.style.objectFit = 'cover';
         fotoCell.appendChild(img);
 
-        // Nama
         const namaCell = row.insertCell();
         namaCell.textContent = item.nama;
 
-        // NIK
         const nikCell = row.insertCell();
         nikCell.textContent = item.nik;
 
-        // Alamat
         const alamatCell = row.insertCell();
         alamatCell.textContent = item.alamat || '-';
 
-        // Telepon
         const teleponCell = row.insertCell();
         teleponCell.textContent = item.telepon || '-';
 
-        // Mulai
         const mulaiCell = row.insertCell();
         mulaiCell.textContent = formatTanggal(item.mulai);
 
-        // Pendidikan
         const pendidikanCell = row.insertCell();
         pendidikanCell.textContent = item.pendidikan || '-';
 
-        // Kontrak
         const kontrakCell = row.insertCell();
         kontrakCell.textContent = `${item.kontrak} Tahun`;
 
-        // Jabatan
         const jabatanCell = row.insertCell();
         jabatanCell.textContent = item.jabatan;
 
-        // Status
         const statusCell = row.insertCell();
         const statusSpan = document.createElement('span');
         statusSpan.style.padding = '4px 8px';
@@ -756,7 +739,6 @@
         statusSpan.textContent = item.status;
         statusCell.appendChild(statusSpan);
 
-        // Dokumen
         const dokumenCell = row.insertCell();
         if (item.dokumen) {
           const link = document.createElement('a');
@@ -769,7 +751,6 @@
           dokumenCell.textContent = '-';
         }
 
-        // Aksi
         const actionCell = row.insertCell();
         actionCell.className = 'action-buttons';
 
@@ -897,13 +878,14 @@
             </thead>
             <tbody>${rows}</tbody>
           </table>
-          <script>
-            setTimeout(() => window.print(), 500);
-          <\/script>
         </body>
         </html>
       `);
       printWindow.document.close();
+      // ✅ Gunakan setTimeout untuk print
+      printWindow.onload = () => {
+        printWindow.print();
+      };
     }
 
     // Export ke Excel (CSV)
@@ -947,29 +929,17 @@
         return;
       }
       try {
-        const res = await fetch(GAS_URL, {
+        await fetch(GAS_URL, {
           method: 'POST',
-          mode: 'cors',
+          mode: 'no-cors', // 🔴 Wajib untuk GAS
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
-        const result = await res.json();
-        if (result.result === 'success') {
-          showToast(`✅ Backup berhasil! File: ${result.file}`);
-        } else {
-          alert(`Backup gagal: ${result.error}`);
-        }
+        showToast("✅ Backup dikirim! Cek folder Google Drive Anda.");
+        console.log("Backup dikirim ke Google Apps Script. Cek folder Drive.");
       } catch (err) {
-        console.error("Error:", err);
-        alert(
-          "Gagal terhubung ke Google Apps Script.\n" +
-          "1. Pastikan GAS sudah di-deploy sebagai 'Anyone'\n" +
-          "2. Cek FOLDER_ID di GAS\n" +
-          "3. Ganti GAS_URL dengan Web App URL Anda\n" +
-          "4. Cek koneksi internet\n" +
-          "Error: " + err.message
-        );
+        console.error("Gagal backup:", err);
+        alert("Gagal kirim backup. Cek: 1. GAS_URL, 2. Deploy GAS sebagai 'Anyone', 3. FOLDER_ID di GAS.");
       }
     }
   </script>
