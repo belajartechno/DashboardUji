@@ -908,37 +908,36 @@
 
     // Backup ke Google Drive - DIPERBAIKI
     async function backupKeGoogleDrive() {
-      const data = JSON.parse(localStorage.getItem('karyawanData')) || [];
-      if (data.length === 0) {
-        alert("Belum ada data untuk di-backup.");
-        return;
-      }
+  const data = JSON.parse(localStorage.getItem('karyawanData')) || [];
+  if (data.length === 0) {
+    alert("Belum ada data untuk di-backup.");
+    return;
+  }
 
-      const formData = new FormData();
-      formData.append('data', JSON.stringify(data, null, 2));
-      formData.append('action', 'backup');
+  const formData = new FormData();
+  formData.append('data', JSON.stringify(data, null, 2));
 
-      try {
-        const response = await fetch(GAS_URL, {
-          method: 'POST',
-          mode: 'cors', // ✅ Ganti dari 'no-cors' ke 'cors'
-          body: formData
-        });
+  try {
+    const response = await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'cors', // ⚠️ Wajib: ganti dari 'no-cors'
+      body: formData
+    });
 
-        if (response.ok) {
-          const result = await response.json();
-          console.log("Backup berhasil:", result);
-          showToast("✅ Backup berhasil ke Google Drive!");
-        } else {
-          const errorText = await response.text();
-          console.error("GAS Error:", errorText);
-          alert("Gagal dari server: " + errorText);
-        }
-      } catch (err) {
-        console.error("Network error:", err);
-        alert("Gagal kirim backup. Cek:\n1. GAS_URL\n2. Deploy sebagai 'Anyone'\n3. Buka konsol (F12)");
-      }
+    if (response.ok) {
+      const result = await response.json();
+      console.log("Backup berhasil:", result);
+      showToast("✅ Backup berhasil ke Google Drive!");
+    } else {
+      const errorText = await response.text();
+      console.error("GAS Error:", errorText);
+      alert("Gagal: " + errorText);
     }
+  } catch (err) {
+    console.error("Network error:", err);
+    alert("Gagal kirim backup. Cek:\n1. GAS_URL\n2. Deploy sebagai 'Anyone'\n3. Buka konsol (F12)");
+  }
+}
   </script>
 </body>
 </html>
