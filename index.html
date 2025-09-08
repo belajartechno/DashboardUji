@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin Karyawan - Offline & Backup Online</title>
+  <title>Dashboard Karyawan</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -36,16 +36,13 @@
       text-align: center;
     }
     .login-form h2 { color: var(--primary); margin-bottom: 20px; }
-    input, select {
+    input {
       width: 100%;
       padding: 12px;
       margin: 8px 0;
       border: 1px solid #ddd;
       border-radius: 6px;
       font-size: 1rem;
-    }
-    input[type="file"] {
-      padding: 5px 0;
     }
     button {
       padding: 10px 15px;
@@ -61,9 +58,6 @@
     .btn-warning { background: var(--warning); color: white; }
     .btn-block { display: block; width: 100%; text-align: center; }
     .btn-sm { padding: 8px 12px; font-size: 0.9rem; }
-    .text-center { text-align: center; }
-    .mt-10 { margin-top: 10px; }
-    .mt-20 { margin-top: 20px; }
     header {
       background: var(--primary);
       color: white;
@@ -168,22 +162,28 @@
 <body>
   <!-- Layar Login -->
   <div id="loginScreen" class="login-form">
-    <h2><i class="fas fa-user-shield"></i> Login Admin</h2>
-    <p>Masuk ke sistem (Offline + Backup Online)</p>
-    <input type="text" id="username" placeholder="Username" value="admin">
-    <input type="password" id="password" placeholder="Password" value="password123">
+    <h2><i class="fas fa-user-shield"></i> Login Sistem</h2>
+    <p>Pilih peran Anda</p>
+    <select id="userRole" style="width:100%; padding:12px; margin-bottom:10px;">
+      <option value="admin">Admin</option>
+      <option value="operator">Operator</option>
+    </select>
+    <input type="password" id="password" placeholder="Password">
     <button class="btn-primary btn-block" onclick="login()">
       <i class="fas fa-sign-in-alt"></i> Masuk
     </button>
   </div>
+
   <!-- Aplikasi Utama -->
   <div id="mainApp" style="display:none;">
     <header>
-      <h1><i class="fas fa-building"></i> Dashboard Karyawan</h1>
+      <h1><i class="fas fa-building"></i> <span id="userLabel">Dashboard</span></h1>
       <button class="btn-danger" onclick="logout()">Keluar</button>
     </header>
+
     <!-- Notifikasi -->
     <div id="toast" class="toast">Aksi berhasil!</div>
+
     <!-- Form Tambah/Edit -->
     <div class="card">
       <h2 id="formTitle"><i class="fas fa-user-plus"></i> Tambah Karyawan</h2>
@@ -278,6 +278,7 @@
         <i class="fas fa-save"></i> Simpan Karyawan
       </button>
     </div>
+
     <!-- Pencarian & Ekspor -->
     <div class="card">
       <h2><i class="fas fa-search"></i> Cari & Ekspor Data</h2>
@@ -289,11 +290,12 @@
         <button class="btn-primary btn-sm" onclick="exportToExcel()">
           <i class="fas fa-file-excel"></i> Export Excel (CSV)
         </button>
-        <button class="btn-warning btn-sm" onclick="backupKeSupabase()">
+        <button class="btn-warning btn-sm" onclick="backupKeSupabase()" id="btnBackup">
           <i class="fas fa-cloud-upload-alt"></i> Backup ke Supabase
         </button>
       </div>
     </div>
+
     <!-- Tabel Data -->
     <div class="card">
       <h2>Data Karyawan</h2>
@@ -318,6 +320,7 @@
         <tbody></tbody>
       </table>
     </div>
+
     <!-- Grafik -->
     <div class="card">
       <h2><i class="fas fa-chart-bar"></i> Statistik Karyawan</h2>
@@ -326,61 +329,72 @@
       </div>
     </div>
   </div>
-  <!-- Hidden input untuk simpan dokumen -->
+
+  <!-- Hidden input -->
   <input type="hidden" id="dokumen">
+
   <script>
     // 🔁 GANTI INI DENGAN PROYEK ANDA
-    const SUPABASE_URL = 'https://etzifvagqbnkdzbebqqt.supabase.co'; // Ganti dengan URL Anda
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0emlmdmFncWJua2R6YmVicXF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczMDQ0MjIsImV4cCI6MjA3Mjg4MDQyMn0.lzmlnTNzXTDI97TP90ZB7QVmmE8cazrAagZUhPfUSM4'; // Ganti dengan Public Key (anon)
+    const SUPABASE_URL = 'https://etzifvagqbnkdzbebqqt.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV0emlmdmFncWJua2R6YmVicXF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczMDQ0MjIsImV4cCI6MjA3Mjg4MDQyMn0.lzmlnTNzXTDI97TP90ZB7QVmmE8cazrAagZUhPfUSM4';
     const SUPABASE_TABLE = 'karyawan';
 
-    // Username & password admin
-    const ADMIN_USER = "admin";
-    const ADMIN_PASS = "password123";
+    // Password untuk admin dan operator
+    const PASSWORD_ADMIN = "admin123";
+    const PASSWORD_OPERATOR = "operator123";
+
     let allData = [];
     let chart = null;
+    let userRole = 'operator'; // default
 
-    // Cek login saat halaman dibuka
     window.onload = function() {
-      if (localStorage.getItem('adminLoggedIn') === 'true') {
-        tampilkanDashboard();
-        muatData();
-        loadDataFromSupabase(); // Muat dari Supabase
-      }
-    };
-
-    // Login
-    function login() {
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-      if (username === ADMIN_USER && password === ADMIN_PASS) {
-        localStorage.setItem('adminLoggedIn', 'true');
+      const loggedIn = localStorage.getItem('loggedIn');
+      if (loggedIn === 'admin' || loggedIn === 'operator') {
+        userRole = localStorage.getItem('loggedIn');
         tampilkanDashboard();
         muatData();
         loadDataFromSupabase();
-        showToast("Login berhasil!");
-      } else {
-        alert("Username atau password salah!");
       }
+    };
+
+    function login() {
+      const role = document.getElementById('userRole').value;
+      const password = document.getElementById('password').value;
+
+      if (role === 'admin' && password !== PASSWORD_ADMIN) {
+        alert("Password admin salah!");
+        return;
+      }
+      if (role === 'operator' && password !== PASSWORD_OPERATOR) {
+        alert("Password operator salah!");
+        return;
+      }
+
+      userRole = role;
+      localStorage.setItem('loggedIn', role);
+      tampilkanDashboard();
+      muatData();
+      loadDataFromSupabase();
+      showToast(`Login sebagai ${role.toUpperCase()} berhasil!`);
     }
 
     function tampilkanDashboard() {
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('mainApp').style.display = 'block';
+      document.getElementById('userLabel').textContent = `Dashboard - ${userRole.toUpperCase()}`;
+      document.getElementById('btnBackup').style.display = userRole === 'admin' ? 'inline-block' : 'none';
     }
 
     function logout() {
-      localStorage.removeItem('adminLoggedIn');
+      localStorage.removeItem('loggedIn');
       location.reload();
     }
 
-    // Simpan data ke localStorage
     function simpanData(data) {
       localStorage.setItem('karyawanData', JSON.stringify(data));
       allData = data;
     }
 
-    // Muat data dari localStorage
     function muatData() {
       const tbody = document.getElementById('karyawanTable').getElementsByTagName('tbody')[0];
       tbody.innerHTML = '';
@@ -388,14 +402,12 @@
       allData.forEach((item, index) => {
         const row = tbody.insertRow();
 
-        // QR Code - Diperbaiki: bersihkan & ukuran 90px
         const qrCell = row.insertCell();
         const qrDiv = document.createElement('div');
         qrDiv.className = 'qrcode-container';
         qrDiv.style.width = '90px';
         qrDiv.style.height = '90px';
         qrCell.appendChild(qrDiv);
-        // Bersihkan dulu
         qrDiv.innerHTML = '';
         new QRCode(qrDiv, {
           text: `NIK: ${item.nik}\nNama: ${item.nama}\nJabatan: ${item.jabatan}\nStatus: ${item.status}`,
@@ -404,7 +416,6 @@
           correctLevel: QRCode.CorrectLevel.M
         });
 
-        // Foto
         const fotoCell = row.insertCell();
         const img = document.createElement('img');
         img.src = item.foto || 'https://via.placeholder.com/40';
@@ -414,7 +425,6 @@
         img.style.objectFit = 'cover';
         fotoCell.appendChild(img);
 
-        // Sisanya seperti biasa...
         const namaCell = row.insertCell();
         namaCell.textContent = item.nama;
 
@@ -466,14 +476,19 @@
 
         const actionCell = row.insertCell();
         actionCell.className = 'action-buttons';
-        const editBtn = document.createElement('button');
-        editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
-        editBtn.onclick = () => editKaryawan(index);
-        const deleteBtn = document.createElement('button');
-        deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Hapus';
-        deleteBtn.onclick = () => hapusKaryawan(index);
-        actionCell.appendChild(editBtn);
-        actionCell.appendChild(deleteBtn);
+
+        if (userRole === 'admin') {
+          const editBtn = document.createElement('button');
+          editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+          editBtn.onclick = () => editKaryawan(index);
+          const deleteBtn = document.createElement('button');
+          deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Hapus';
+          deleteBtn.onclick = () => hapusKaryawan(index);
+          actionCell.appendChild(editBtn);
+          actionCell.appendChild(deleteBtn);
+        } else {
+          actionCell.textContent = '-';
+        }
       });
       renderChart();
     }
@@ -514,6 +529,7 @@
     function simpanKaryawan() {
       document.getElementById('errorNama').textContent = '';
       document.getElementById('errorNik').textContent = '';
+
       const nama = getVal('nama');
       const nik = getVal('nik');
       const alamat = getVal('alamat');
@@ -579,12 +595,15 @@
           nama, nik, alamat, telepon, mulai, pendidikan, kontrak, 
           jabatan, status, foto: fotoURL, dokumen: dokumenURL 
         };
-        if (editId !== "") {
+        if (editId !== "" && userRole === 'admin') {
           data[editId] = item;
           showToast("Data diperbarui.");
-        } else {
+        } else if (userRole === 'admin') {
           data.push(item);
           showToast("Karyawan ditambahkan.");
+        } else {
+          alert("Hanya admin yang bisa menambah data.");
+          return;
         }
         simpanData(data);
         clearForm();
@@ -595,12 +614,13 @@
     function getVal(id) { return document.getElementById(id).value.trim(); }
 
     function editKaryawan(index) {
-      const data = JSON.parse(localStorage.getItem('karyawanData')) || [];
-      const item = data[index];
-      if (!item) {
-        alert("Data tidak ditemukan.");
+      if (userRole !== 'admin') {
+        alert("Hanya admin yang bisa edit.");
         return;
       }
+      const data = JSON.parse(localStorage.getItem('karyawanData')) || [];
+      const item = data[index];
+      if (!item) return;
       document.getElementById('editId').value = index;
       setVal('nama', item.nama);
       setVal('nik', item.nik);
@@ -617,9 +637,11 @@
       document.getElementById('formTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Karyawan';
     }
 
-    function setVal(id, val) { if (document.getElementById(id)) document.getElementById(id).value = val; }
-
     function hapusKaryawan(index) {
+      if (userRole !== 'admin') {
+        alert("Hanya admin yang bisa hapus.");
+        return;
+      }
       if (confirm("Hapus karyawan ini?")) {
         const data = JSON.parse(localStorage.getItem('karyawanData')) || [];
         data.splice(index, 1);
@@ -725,18 +747,21 @@
 
         const actionCell = row.insertCell();
         actionCell.className = 'action-buttons';
-        const editBtn = document.createElement('button');
-        editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
-        editBtn.onclick = () => editKaryawan(index);
-        const deleteBtn = document.createElement('button');
-        deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Hapus';
-        deleteBtn.onclick = () => hapusKaryawan(index);
-        actionCell.appendChild(editBtn);
-        actionCell.appendChild(deleteBtn);
+        if (userRole === 'admin') {
+          const editBtn = document.createElement('button');
+          editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
+          editBtn.onclick = () => editKaryawan(index);
+          const deleteBtn = document.createElement('button');
+          deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Hapus';
+          deleteBtn.onclick = () => hapusKaryawan(index);
+          actionCell.appendChild(editBtn);
+          actionCell.appendChild(deleteBtn);
+        } else {
+          actionCell.textContent = '-';
+        }
       });
     }
 
-    // Grafik Statistik - Diperbaiki: cek data kosong
     function renderChart() {
       const ctx = document.getElementById('statsChart').getContext('2d');
       if (chart) chart.destroy();
@@ -745,7 +770,7 @@
         ctx.font = '16px Roboto';
         ctx.fillStyle = '#666';
         ctx.textAlign = 'center';
-        ctx.fillText('Belum ada data karyawan', ctx.canvas.width / 2, ctx.canvas.height / 2);
+        ctx.fillText('Belum ada data', ctx.canvas.width / 2, ctx.canvas.height / 2);
         return;
       }
 
@@ -758,12 +783,12 @@
 
       chart = new Chart(ctx, {
         type: 'bar',
-        data: {
+         {
           labels: Object.keys(wilayah).length > 0 ? Object.keys(wilayah) : ['Tidak Ada'],
           datasets: [
-            { label: 'Wilayah', data: Object.values(wilayah).length > 0 ? Object.values(wilayah) : [0], backgroundColor: '#4CAF50' },
-            { label: 'Pendidikan', data: Object.values(pendidikan).length > 0 ? Object.values(pendidikan) : [0], backgroundColor: '#2196F3' },
-            { label: 'Jabatan', data: Object.values(jabatan).length > 0 ? Object.values(jabatan) : [0], backgroundColor: '#FF9800' }
+            { label: 'Wilayah',  Object.values(wilayah).length > 0 ? Object.values(wilayah) : [0], backgroundColor: '#4CAF50' },
+            { label: 'Pendidikan',  Object.values(pendidikan).length > 0 ? Object.values(pendidikan) : [0], backgroundColor: '#2196F3' },
+            { label: 'Jabatan',  Object.values(jabatan).length > 0 ? Object.values(jabatan) : [0], backgroundColor: '#FF9800' }
           ]
         },
         options: {
@@ -895,84 +920,62 @@
       showToast("Data berhasil diekspor ke CSV");
     }
 
-    // Backup ke Supabase
     async function backupKeSupabase() {
-  const data = JSON.parse(localStorage.getItem('karyawanData')) || [];
-  if (data.length === 0) {
-    alert("Belum ada data untuk di-backup.");
-    return;
-  }
-
-  try {
-    // 🔁 Gunakan upsert berdasarkan NIK (harus unique)
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?on_conflict=nik`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`
-      },
-      body: JSON.stringify(data)
-    });
-
-    if (!response.ok) {
-      const errorMsg = await response.text();
-      throw new Error(`HTTP ${response.status}: ${errorMsg}`);
-    }
-
-    showToast("✅ Data berhasil di-backup (upsert)!");
-    console.log("Backup (upsert) berhasil");
-  } catch (err) {
-    console.error("Backup error:", err);
-    alert("Gagal backup: " + err.message);
-  }
-}
-    if (!response.ok) {
-      const errorMsg = await response.text();
-      throw new Error(`HTTP ${response.status}: ${errorMsg}`);
-    }
-
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      const result = await response.json();
-      console.log("Backup berhasil:", result);
-    }
-
-    showToast("✅ Data berhasil di-backup ke Supabase!");
-  } catch (err) {
-    console.error("Backup error:", err);
-    alert("Gagal backup: " + err.message);
-  }
-}
-    // Muat data dari Supabase saat buka aplikasi
-    async function loadDataFromSupabase() {
-  try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`, {
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`
+      if (userRole !== 'admin') {
+        alert("Hanya admin yang bisa backup.");
+        return;
       }
-    });
+      const data = JSON.parse(localStorage.getItem('karyawanData')) || [];
+      if (data.length === 0) {
+        alert("Belum ada data untuk di-backup.");
+        return;
+      }
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Load failed: ${response.status} ${error}`);
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?on_conflict=nik`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`HTTP ${response.status}: ${error}`);
+        }
+
+        showToast("✅ Data berhasil di-backup ke Supabase!");
+      } catch (err) {
+        console.error("Backup error:", err);
+        alert("Gagal backup: " + err.message);
+      }
     }
 
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      throw new Error('Bukan JSON: ' + text);
-    }
+    async function loadDataFromSupabase() {
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`, {
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          }
+        });
 
-    const data = await response.json();
-    localStorage.setItem('karyawanData', JSON.stringify(data));
-    muatData();
-    showToast("✅ Data dimuat dari Supabase");
-  } catch (err) {
-    console.error("Gagal muat dari Supabase:", err);
-  }
-}
+        if (response.ok) {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            localStorage.setItem('karyawanData', JSON.stringify(data));
+            muatData();
+            showToast("✅ Data dimuat dari Supabase");
+          }
+        }
+      } catch (err) {
+        console.error("Gagal muat dari Supabase:", err);
+      }
+    }
   </script>
 </body>
 </html>
