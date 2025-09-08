@@ -93,7 +93,7 @@
       background-color: #f7f7f7;
     }
     .dokumen-preview {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23999' d='M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z'/%3E%3C/svg%3E");
+      background-image: url("image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23999' d='M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z'/%3E%3C/svg%3E");
     }
     table {
       width: 100%;
@@ -345,7 +345,7 @@
 
     let allData = [];
     let chart = null;
-    let userRole = 'operator'; // default
+    let userRole = 'operator';
 
     window.onload = function() {
       const loggedIn = localStorage.getItem('loggedIn');
@@ -358,17 +358,17 @@
     };
 
     function login() {
-      const username = document.getElementById('username').value;
+      const role = document.getElementById('userRole').value;
       const password = document.getElementById('password').value;
-      if (username === ADMIN_USER && password === ADMIN_PASS) {
-        localStorage.setItem('adminLoggedIn', 'true');
-        tampilkanDashboard();
-        muatData();
-        showToast("Login berhasil!");
-      } else {
-        alert("Username atau password salah!");
+
+      if (role === 'admin' && password !== PASSWORD_ADMIN) {
+        alert("Password admin salah!");
+        return;
       }
-    }
+      if (role === 'operator' && password !== PASSWORD_OPERATOR) {
+        alert("Password operator salah!");
+        return;
+      }
 
       userRole = role;
       localStorage.setItem('loggedIn', role);
@@ -765,34 +765,30 @@
     function renderChart() {
       const ctx = document.getElementById('statsChart').getContext('2d');
       if (chart) chart.destroy();
-      
+
+      if (allData.length === 0) {
+        ctx.font = '16px Roboto';
+        ctx.fillStyle = '#666';
+        ctx.textAlign = 'center';
+        ctx.fillText('Belum ada data', ctx.canvas.width / 2, ctx.canvas.height / 2);
+        return;
+      }
+
       const wilayah = {}, pendidikan = {}, jabatan = {};
       allData.forEach(item => {
         if (item.alamat) wilayah[item.alamat] = (wilayah[item.alamat] || 0) + 1;
         if (item.pendidikan) pendidikan[item.pendidikan] = (pendidikan[item.pendidikan] || 0) + 1;
         if (item.jabatan) jabatan[item.jabatan] = (jabatan[item.jabatan] || 0) + 1;
       });
-      
+
       chart = new Chart(ctx, {
         type: 'bar',
-        data: {
+         {
           labels: Object.keys(wilayah).length > 0 ? Object.keys(wilayah) : ['Tidak Ada'],
           datasets: [
-            { 
-              label: 'Wilayah', 
-              data: Object.values(wilayah).length > 0 ? Object.values(wilayah) : [0], 
-              backgroundColor: '#4CAF50' 
-            },
-            { 
-              label: 'Pendidikan', 
-              data: Object.values(pendidikan).length > 0 ? Object.values(pendidikan) : [0], 
-              backgroundColor: '#2196F3' 
-            },
-            { 
-              label: 'Jabatan', 
-              data: Object.values(jabatan).length > 0 ? Object.values(jabatan) : [0], 
-              backgroundColor: '#FF9800' 
-            }
+            { label: 'Wilayah',  Object.values(wilayah).length > 0 ? Object.values(wilayah) : [0], backgroundColor: '#4CAF50' },
+            { label: 'Pendidikan',  Object.values(pendidikan).length > 0 ? Object.values(pendidikan) : [0], backgroundColor: '#2196F3' },
+            { label: 'Jabatan',  Object.values(jabatan).length > 0 ? Object.values(jabatan) : [0], backgroundColor: '#FF9800' }
           ]
         },
         options: {
