@@ -394,12 +394,13 @@
         const row = tbody.insertRow();
 
         // QR Code
-        const qrCell = row.insertCell();
-        const qrDiv = document.createElement('div');
-        qrDiv.className = 'qrcode-container';
-        qrDiv.style.width = '80px';
-        qrDiv.style.height = '80px';
-        qrCell.appendChild(qrDiv);
+        qrDiv.innerHTML = '';
+        new QRCode(qrDiv, {
+          text: `NIK: ${item.nik}\nNama: ${item.nama}\nJabatan: ${item.jabatan}\nStatus: ${item.status}`,
+          width: 90,
+          height: 90,
+          correctLevel: QRCode.CorrectLevel.M // Cukup untuk teks pendek
+});
         new QRCode(qrDiv, {
           text: JSON.stringify({
             nama: item.nama,
@@ -927,19 +928,29 @@
     return;
   }
 
+  const formData = new FormData();
+  formData.append('action', 'backup');
+  formData.append('data', JSON.stringify(data, null, 2));
+
   try {
-    await fetch(GAS_URL, {
+    const response = await fetch(GAS_URL, {
       method: 'POST',
-      mode: 'no-cors',
-      // ❌ JANGAN gunakan headers
-      body: JSON.stringify(data) // Dikirim sebagai plain text
+      mode: 'cors', // ⚠️ Wajib ganti dari 'no-cors'
+      body: formData
     });
 
-    showToast("✅ Backup dikirim! Cek folder Google Drive Anda.");
-    console.log("Backup dikirim ke GAS. Cek folder Drive.");
+    if (response.ok) {
+      const result = await response.json();
+      console.log("Backup berhasil:", result);
+      showToast("✅ Backup berhasil disimpan di Google Drive!");
+    } else {
+      const errText = await response.text();
+      console.error("HTTP Error:", errText);
+      alert("Gagal: " + errText);
+    }
   } catch (err) {
-    console.error("Gagal backup:", err);
-    alert("Gagal kirim backup. Pastikan:\n1. GAS_URL benar\n2. Folder diizinkan sebagai 'Editor'\n3. GAS di-deploy sebagai 'Anyone'");
+    console.error("Network/Fetch Error:", err);
+    alert("Gagal kirim backup. Cek:\n1. GAS_URL\n2. Deploy GAS sebagai 'Anyone'\n3. Buka konsol (F12)");
   }
 }
   </script>
