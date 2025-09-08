@@ -393,12 +393,12 @@
         qrCell.appendChild(qrDiv);
         
         // Hapus QR lama jika ada
-        qrDiv.innerHTML = '';
+        qqrDiv.innerHTML = '';
         new QRCode(qrDiv, {
           text: `NIK: ${item.nik}\nNama: ${item.nama}\nJabatan: ${item.jabatan}\nStatus: ${item.status}`,
           width: 90,
           height: 90,
-          correctLevel: QRCode.CorrectLevel.M
+          correctLevel: QRCode.CorrectLevel.M // Tahan kerusakan kecil
         });
 
         // Foto
