@@ -358,17 +358,17 @@
     };
 
     function login() {
-      const role = document.getElementById('userRole').value;
+      const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
-
-      if (role === 'admin' && password !== PASSWORD_ADMIN) {
-        alert("Password admin salah!");
-        return;
+      if (username === ADMIN_USER && password === ADMIN_PASS) {
+        localStorage.setItem('adminLoggedIn', 'true');
+        tampilkanDashboard();
+        muatData();
+        showToast("Login berhasil!");
+      } else {
+        alert("Username atau password salah!");
       }
-      if (role === 'operator' && password !== PASSWORD_OPERATOR) {
-        alert("Password operator salah!");
-        return;
-      }
+    }
 
       userRole = role;
       localStorage.setItem('loggedIn', role);
@@ -765,30 +765,34 @@
     function renderChart() {
       const ctx = document.getElementById('statsChart').getContext('2d');
       if (chart) chart.destroy();
-
-      if (allData.length === 0) {
-        ctx.font = '16px Roboto';
-        ctx.fillStyle = '#666';
-        ctx.textAlign = 'center';
-        ctx.fillText('Belum ada data', ctx.canvas.width / 2, ctx.canvas.height / 2);
-        return;
-      }
-
+      
       const wilayah = {}, pendidikan = {}, jabatan = {};
       allData.forEach(item => {
         if (item.alamat) wilayah[item.alamat] = (wilayah[item.alamat] || 0) + 1;
         if (item.pendidikan) pendidikan[item.pendidikan] = (pendidikan[item.pendidikan] || 0) + 1;
         if (item.jabatan) jabatan[item.jabatan] = (jabatan[item.jabatan] || 0) + 1;
       });
-
+      
       chart = new Chart(ctx, {
         type: 'bar',
-         {
+        data: {
           labels: Object.keys(wilayah).length > 0 ? Object.keys(wilayah) : ['Tidak Ada'],
           datasets: [
-            { label: 'Wilayah',  Object.values(wilayah).length > 0 ? Object.values(wilayah) : [0], backgroundColor: '#4CAF50' },
-            { label: 'Pendidikan',  Object.values(pendidikan).length > 0 ? Object.values(pendidikan) : [0], backgroundColor: '#2196F3' },
-            { label: 'Jabatan',  Object.values(jabatan).length > 0 ? Object.values(jabatan) : [0], backgroundColor: '#FF9800' }
+            { 
+              label: 'Wilayah', 
+              data: Object.values(wilayah).length > 0 ? Object.values(wilayah) : [0], 
+              backgroundColor: '#4CAF50' 
+            },
+            { 
+              label: 'Pendidikan', 
+              data: Object.values(pendidikan).length > 0 ? Object.values(pendidikan) : [0], 
+              backgroundColor: '#2196F3' 
+            },
+            { 
+              label: 'Jabatan', 
+              data: Object.values(jabatan).length > 0 ? Object.values(jabatan) : [0], 
+              backgroundColor: '#FF9800' 
+            }
           ]
         },
         options: {
