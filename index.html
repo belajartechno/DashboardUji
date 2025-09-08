@@ -395,7 +395,8 @@
         qrDiv.style.width = '90px';
         qrDiv.style.height = '90px';
         qrCell.appendChild(qrDiv);
-        qrDiv.innerHTML = ''; // Bersihkan
+        // Bersihkan dulu
+        qrDiv.innerHTML = '';
         new QRCode(qrDiv, {
           text: `NIK: ${item.nik}\nNama: ${item.nama}\nJabatan: ${item.jabatan}\nStatus: ${item.status}`,
           width: 90,
@@ -903,7 +904,8 @@
   }
 
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`, {
+    // 🔁 Gunakan upsert berdasarkan NIK (harus unique)
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?on_conflict=nik`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -913,24 +915,32 @@
       body: JSON.stringify(data)
     });
 
-    // ✅ Cek apakah respons sukses DAN apakah respons ada isinya
     if (!response.ok) {
-      const errorMsg = await response.text(); // Supabase kadang kirim error sebagai text
+      const errorMsg = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorMsg}`);
+    }
+
+    showToast("✅ Data berhasil di-backup (upsert)!");
+    console.log("Backup (upsert) berhasil");
+  } catch (err) {
+    console.error("Backup error:", err);
+    alert("Gagal backup: " + err.message);
+  }
+}
+    if (!response.ok) {
+      const errorMsg = await response.text();
       throw new Error(`HTTP ${response.status}: ${errorMsg}`);
     }
 
     const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      console.error('Bukan JSON:', text);
-      throw new Error('Respons bukan JSON: ' + text);
+    if (contentType && contentType.includes('application/json')) {
+      const result = await response.json();
+      console.log("Backup berhasil:", result);
     }
 
-    const result = await response.json();
-    console.log("Backup berhasil:", result);
     showToast("✅ Data berhasil di-backup ke Supabase!");
   } catch (err) {
-    console.error("Network error:", err);
+    console.error("Backup error:", err);
     alert("Gagal backup: " + err.message);
   }
 }
