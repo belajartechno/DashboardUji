@@ -930,12 +930,12 @@
 
   const formData = new FormData();
   formData.append('action', 'backup');
-  formData.append('data', JSON.stringify(data, null, 2));
+  formData.append('data', JSON.stringify(data, null, 2)); // Kirim sebagai field 'data'
 
   try {
     const response = await fetch(GAS_URL, {
       method: 'POST',
-      mode: 'cors', // ⚠️ Wajib ganti dari 'no-cors'
+      mode: 'cors', // ⚠️ Wajib: ganti dari 'no-cors'
       body: formData
     });
 
@@ -944,9 +944,9 @@
       console.log("Backup berhasil:", result);
       showToast("✅ Backup berhasil disimpan di Google Drive!");
     } else {
-      const errText = await response.text();
-      console.error("HTTP Error:", errText);
-      alert("Gagal: " + errText);
+      const errorText = await response.text();
+      console.error("GAS Error Response:", errorText);
+      alert("Gagal dari server: " + errorText);
     }
   } catch (err) {
     console.error("Network/Fetch Error:", err);
